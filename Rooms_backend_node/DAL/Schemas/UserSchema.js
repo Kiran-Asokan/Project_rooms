@@ -24,6 +24,9 @@ const UserSchema = new mongoose.Schema({
     phone: {
         type: Number,
         require: true
+    },
+    token:{
+        type: String
     }
 })
 

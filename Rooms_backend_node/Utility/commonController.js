@@ -1,4 +1,6 @@
-
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken')
+const Users = require('../DAL/Schemas/UserSchema')
 
 const commonController = {
     validateLogin: async function(req, res, next){
@@ -27,20 +29,34 @@ const commonController = {
 
             // Validating form fields
             if(name == ""){
-                res.status(403).send('Please fill name');
+                res.status(200).send({
+                    Error: 'Please fill name'
+                });
             }else if(password == "" || confirmPassword == "" || !passwordRegex.test(password)){
-                res.status(403).send('Please fill password and confirm password properly');
+                res.status(200).send({
+                    Error: 'Please fill password and confirm password properly'
+                });
             }else if(confirmPassword !== password){
-                res.status(403).send('password is not matched');
+                res.status(200).send({
+                    Error: 'password is not matched'
+                });
             }else if(role == ""){
-                res.status(403).send('please select role');
+                res.status(200).send({
+                    Error: 'please select role'
+                });
             }else if(phone == ""){
-                res.status(403).send('please fill phone number');
+                res.status(200).send({
+                    Error: 'please fill phone number'
+                });
             }else if(email == "" || !emailRegex.test(email)){
-                res.status(403).send('please fill valid email');
+                res.status(200).send({
+                    Error: 'please fill valid email'
+                });
             }
             else if(status == ""){
-                res.status(403).send('please enter status');
+                res.status(200).send({
+                    Error: 'please enter status'
+                });
             }else{
                 next()
             }
@@ -64,7 +80,60 @@ const commonController = {
         } catch (error) {
             res.status(500).send(error.message);
         }
+    },
+
+    createToken: async function(user){
+        try {
+            console.log(user.id, 'user')
+            const payload = {
+                userId: user.id,
+                email: user.email
+            }
+            const key = process.env.SECRETKEY
+            const token = jwt.sign(payload, key, {expiresIn: 84680})
+            if(token){
+                await Users.updateOne({_id: user.id}, {
+                    $set: {token}
+                })
+                user.save();
+                return {user, token}
+            }
+        } catch (error) {
+            console.log(error);
+            return { APIError: error };
+        }
+        
+    },
+    encrypt: async function(message, secretKey){
+        try {
+            const key = crypto.scryptSync(secretKey, "salt", 24); //Create key
+            const iv = Buffer.alloc(16, 0);
+            // Generate different ciphertext everytime
+            const cipher = crypto.createCipheriv('aes-192-cbc', key, iv);
+            let encrypted =
+              cipher.update(message, "utf8", "hex") + cipher.final("hex"); // Encrypted text
+            //Deciphered textconsole.log(decrypted);
+            return encrypted;
+          } catch (err) {
+            console.log({ APIError: err });
+          }
+    },
+    decrypt: async function (message, secretKey) {
+        console.log(message, '~K#Ajy0th!@862oo1~')
+        try {
+          const key = crypto.scryptSync(secretKey, "salt", 24);
+          const iv = Buffer.alloc(16, 0);
+          const decipher = crypto.createDecipheriv('aes-192-cbc', key, iv);
+          let decrypted =
+            decipher.update(message, "hex", "utf8") + decipher.final("utf8");
+    
+          return decrypted;
+        } catch (err) {
+          console.log(err.message);
+          return { APIError: err };
+        }
     }
+    
 }
 
 module.exports = commonController

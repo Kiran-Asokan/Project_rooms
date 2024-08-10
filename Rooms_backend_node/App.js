@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyparser = require('body-parser')
+const cors = require('cors');
 const env = process.env.NODE_ENV || 'development';
 // require('dotenv').config({ path: `${env}.env` }); 
 require('dotenv').config({ path: `ENV/${env}.env` });
@@ -9,6 +10,7 @@ const routes = require('./Routes/routes')
 const mongoConnect = require('./DAL/mongoose')
 
 const app = express()
+app.use(cors());
 // Body-parser middleware
 app.use(bodyparser.urlencoded({ extended: true }))
 app.use(bodyparser.json())

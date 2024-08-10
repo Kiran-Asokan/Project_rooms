@@ -12,12 +12,17 @@ const routes = (app) => {
             let {email, password} = request.body;
             
             const user = await Users.findOne({email: email});
+            const decryptedPassword = await commonController.decrypt(user.password, process.env.SECRETKEY)
             if(!user){
                 response.status(403).send('Account not found , Please Sign Up');
-            }else if (user.password !== password){
+            }else if (decryptedPassword !== password){
                 response.status(403).send('Wrong Password');
             }else{
-                response.status(200).send('Login Successfull');
+                const token = await commonController.createToken(user);
+                response.status(200).send({
+                    Message: 'Login Successfull',
+                    token
+                });
             }    
         } catch (error) {
             response.status(500).send(error.message);
@@ -33,10 +38,10 @@ const routes = (app) => {
 
             const user = await Users.findOne({email: email});
             if(user){
-                response.status(403).send('Account already exist with these email');
+                response.status(200).send('Account already exist with these email');
             }else{
 
-                
+                const encryptedPassword = await commonController.encrypt(password, process.env.SECRETKEY)
 
                 const newUser = new Users({
                     name: name,
@@ -44,7 +49,7 @@ const routes = (app) => {
                     status: status,
                     email: email,
                     phone: phone,
-                    password: password
+                    password: encryptedPassword
                 })
     
                 const result = await newUser.save()
@@ -57,13 +62,17 @@ const routes = (app) => {
                 })
                 await newBill.save()
 
-                response.status(200).send('User SuccessFully Created');
+                response.status(200).send({
+                    Message: 'User SuccessFully Created'
+                });
             }
             
             
 
         } catch (error) {
-            response.status(500).send(error.message);
+            response.status(500).send({
+                Error: error.message
+            });
         }
     })
 
