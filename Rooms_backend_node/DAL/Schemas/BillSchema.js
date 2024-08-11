@@ -2,10 +2,10 @@ const mongoose = require("mongoose")
 
 const billSchema = new mongoose.Schema({
     amount: {
-        type: Number,
+        type: String,
     },
     dueDate:{
-        type: Date,
+        type: String,
     },
     userId:{
         type: String,

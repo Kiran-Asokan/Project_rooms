@@ -19,11 +19,39 @@ const routes = (app) => {
                 response.status(403).send('Wrong Password');
             }else{
                 const token = await commonController.createToken(user);
+
+                let result = {
+                    token: token.token,
+                    user: {
+                        id: token.user.id,
+                        name: token.user.name,
+                        role: token.user.role,
+                        status: token.user.status,
+                        email: token.user.email,
+                        phone: token.user.phone
+                    }
+                }
+
                 response.status(200).send({
                     Message: 'Login Successfull',
-                    token
+                    token: result
                 });
             }    
+        } catch (error) {
+            response.status(500).send(error.message);
+        }
+    })
+
+    // User Login Endpoint
+    app.post('/logout',async(request, response) => {
+        try {
+            const { userId } = request.body; 
+            const user = Users.findOne({_id: userId});
+            if(user){
+                user.token = "";
+                response.status(200).send('Logged out Succesfully')
+            }
+            
         } catch (error) {
             response.status(500).send(error.message);
         }
@@ -57,12 +85,13 @@ const routes = (app) => {
                 const newBill = new Bills({
                     amount: 500,
                     userId: result._id.toString(),
-                    status: 'pending',
+                    status: 'paid',
                     billType: 'security'
                 })
                 await newBill.save()
 
                 response.status(200).send({
+                    user: newUser,
                     Message: 'User SuccessFully Created'
                 });
             }
@@ -79,7 +108,17 @@ const routes = (app) => {
     app.get('/users', async (request, response) => {
         try {
             const users = await Users.find()
-            response.status(200).send(users)
+            let resposneData = users.map(user => {
+                return {
+                    id: user.id,
+                    name: user.name,
+                    role: user.role,
+                    status: user.status,
+                    email: user.email,
+                    phone: user.phone
+                }
+            })
+            response.status(200).send(resposneData)
         } catch (error) {
             response.status(500).send(error.message);
         }
@@ -111,7 +150,17 @@ const routes = (app) => {
         try {
             const userId = request.query.id;
             let bills = await Bills.find({userId: userId});
-            response.status(200).send(bills)
+            let resposneData = bills.map(bill => {
+                return {
+                    id: bill.id,
+                    amount: bill.amount,
+                    billType: bill.billType,
+                    status: bill.status,
+                    dueDate: bill.dueDate,
+                    email: bill.email
+                }
+            })
+            response.status(200).send(resposneData)
         } catch (error) {
             response.status(500).send(error.message);
         }
@@ -120,8 +169,20 @@ const routes = (app) => {
     app.put('/bills/pay', async(request, response) => {
         try {
             const billId = request.body.billId;
-            await Bills.findOneAndUpdate({_id: billId},{status: 'paid'})
-            response.status(200).send('Bill Succesfully Paid')
+            let bill = await Bills.findOne({_id: billId})
+            bill.status = 'paid'
+            await bill.save()
+            response.status(200).send({
+                Message: "Payment Successfull",
+                bill:{
+                    id: bill.id,
+                    amount: bill.amount,
+                    billType: bill.billType,
+                    status: bill.status,
+                    dueDate: bill.dueDate,
+                    email: bill.email
+                }
+            })
         } catch (error) {
             response.status(500).send(error.message);
         }
@@ -138,19 +199,18 @@ const routes = (app) => {
             let totalPayableAmount = 0;
             let refuntAmount = 0;
             bills.forEach(bill => {
-                console.log(bill)
                 if(bill.billType == 'other' && bill.status == 'pending'){
-                    pendingAmount += bill.amount
+                    pendingAmount += parseInt(bill.amount)
                 }else if(bill.billType == 'other' && bill.status == 'paid'){
-                    paidAmount += bill.amount
+                    paidAmount += parseInt(bill.amount)
                 }else if(bill.billType == 'security' && bill.status == 'paid'){
-                    securityAmountPaid += bill.amount
+                    securityAmountPaid += parseInt(bill.amount)
                 }
             })
-            if(pendingAmount > securityAmount){
-                totalPayableAmount = pendingAmount - securityAmount;
-            }else if(pendingAmount < securityAmount){
-                refuntAmount = securityAmount - pendingAmount
+            if(pendingAmount > securityAmountPaid){
+                totalPayableAmount = pendingAmount - securityAmountPaid;
+            }else if(pendingAmount < securityAmountPaid){
+                refuntAmount = securityAmountPaid - pendingAmount
             }
             
             await Users.findOneAndUpdate({_id: userId},{status: 'vacate'})

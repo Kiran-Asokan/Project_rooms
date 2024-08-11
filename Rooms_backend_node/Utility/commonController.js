@@ -72,7 +72,7 @@ const commonController = {
             let {amount, dueDate, status, userId, billType } = req.body;
 
             if(amount == "" || dueDate == "" || status == "" || userId == "" || billType == ""){
-                res.status(403).send('Please fill all the fields');
+                res.status(200).send('Please fill all the fields');
             }else{
                 next()
             }
@@ -104,6 +104,15 @@ const commonController = {
         }
         
     },
+    verifyToken: async function(token) {
+        try {
+            
+            const result = jwt.verify(token, key);
+            return result;
+        } catch (error) {
+            
+        }
+    },
     encrypt: async function(message, secretKey){
         try {
             const key = crypto.scryptSync(secretKey, "salt", 24); //Create key
@@ -119,7 +128,6 @@ const commonController = {
           }
     },
     decrypt: async function (message, secretKey) {
-        console.log(message, '~K#Ajy0th!@862oo1~')
         try {
           const key = crypto.scryptSync(secretKey, "salt", 24);
           const iv = Buffer.alloc(16, 0);
