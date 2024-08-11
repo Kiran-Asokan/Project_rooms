@@ -112,11 +112,16 @@ const Home = () => {
         })
     }
 
-    const handleCreateForm = (formData) => {
+    const handleCreateForm = async (formData) => {
         const url = `${process.env.REACT_APP_BACKEND_DOMAIN}/bills`
         axios.post(url, formData)
         .then(result => {
-            handleBillModalClose()
+            if(result.data.Error){
+                window.alert(result.data.Error)
+            }else{
+                handleBillModalClose()
+            }
+            
         })
         .catch(error => {
             console.log(error.message, 'uiuiui')
@@ -135,7 +140,7 @@ const Home = () => {
 
             <dialog id="modal">
                 {flagBillModal? (
-                    <CreatBillForm handleCreateForm = {handleCreateForm} users={users} />
+                    <CreatBillForm handleCreateForm = {handleCreateForm} users={activeUsers} />
                 ) : (
                     < VacateModal data = {vacateData} />
                 ) } 
