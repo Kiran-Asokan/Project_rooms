@@ -1,10 +1,9 @@
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 const CreatBillForm = (props) => {
-    console.log(props)
     const [startDate, setStartDate] = useState(new Date());
     const [formData, setFormData] = useState({
         amount:'',
@@ -14,12 +13,13 @@ const CreatBillForm = (props) => {
         userId: props?.users[0]?.id ?? ''
 
     })
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
         props.handleCreateForm(formData)
-        
     }
-
+    useEffect(() => {
+        setFormData({...formData, userId: props?.users[0]?.id })
+    }, [props?.users])
     return (
         <form onSubmit={handleSubmit}>
             <div >

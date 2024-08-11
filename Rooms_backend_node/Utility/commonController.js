@@ -70,9 +70,10 @@ const commonController = {
     validateBillForm: async function(req, res, next){
         try {
             let {amount, dueDate, status, userId, billType } = req.body;
-
             if(amount == "" || dueDate == "" || status == "" || userId == "" || billType == ""){
-                res.status(200).send('Please fill all the fields');
+                res.status(200).send({
+                    Error: 'Please fill all the fields'
+                });
             }else{
                 next()
             }
@@ -84,7 +85,6 @@ const commonController = {
 
     createToken: async function(user){
         try {
-            console.log(user.id, 'user')
             const payload = {
                 userId: user.id,
                 email: user.email
